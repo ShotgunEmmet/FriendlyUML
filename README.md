@@ -4,9 +4,7 @@ A modern, interactive web-based UML diagram creator with animated faces and a pl
 
 ## 🎯 Live Demo
 
-**[Try the UML Diagram Maker Live](https://yourusername.github.io/FriendlyUML/)**
-
-> ⚠️ **Setup Required**: Replace `yourusername` with your GitHub username after deploying to GitHub Pages. See the [Getting Started](#-getting-started) section below for deployment instructions.
+**[Try the UML Diagram Maker Live](https://shotgunemmet.github.io/FriendlyUML/)**
 
 ## ✨ Features
 
@@ -64,7 +62,7 @@ A modern, interactive web-based UML diagram creator with animated faces and a pl
 3. Wait 2-3 minutes for deployment
 4. Your app will be available at:
    ```
-   https://[your-github-username].github.io/[repository-name]/
+   https://shotgunemmet.github.io/[repository-name]/
    ```
    Example: `https://shotgunemmet.github.io/FriendlyUML/`
 
@@ -74,7 +72,7 @@ A modern, interactive web-based UML diagram creator with animated faces and a pl
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/FriendlyUML.git
+git clone https://github.com/shotgunemmet/FriendlyUML.git
 cd FriendlyUML
 ```
 
