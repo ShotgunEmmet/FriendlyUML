@@ -43,4 +43,12 @@ export class ComponentElement extends Element {
     getFacePosition() {
         return 'translate(72, -10)';
     }
+
+    static fromObject(obj) {
+        const element = new ComponentElement(obj.id, obj.x, obj.y);
+        element.name = obj.name || '';
+        if (obj.color) element.color = obj.color;
+        if (obj.stroke) element.stroke = obj.stroke;
+        return element;
+    }
 }

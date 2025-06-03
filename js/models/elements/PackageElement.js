@@ -87,9 +87,12 @@ export class PackageElement extends Element {
     }
 
     static fromObject(obj) {
-        const element = super.fromObject(obj);
-        element.width = obj.width;
-        element.height = obj.height;
+        const element = new PackageElement(obj.id, obj.x, obj.y);
+        element.name = obj.name || '';
+        element.width = obj.width || 200;
+        element.height = obj.height || 150;
+        if (obj.color) element.color = obj.color;
+        if (obj.stroke) element.stroke = obj.stroke;
         return element;
     }
 }

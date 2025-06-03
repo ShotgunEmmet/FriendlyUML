@@ -36,4 +36,12 @@ export class NoteElement extends Element {
     getFacePosition() {
         return 'translate(72, -15)';
     }
+
+    static fromObject(obj) {
+        const element = new NoteElement(obj.id, obj.x, obj.y);
+        element.name = obj.name || '';
+        if (obj.color) element.color = obj.color;
+        if (obj.stroke) element.stroke = obj.stroke;
+        return element;
+    }
 }

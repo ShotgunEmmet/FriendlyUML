@@ -81,10 +81,7 @@ export class Element {
 
     // Create from object
     static fromObject(obj) {
-        const element = new this(obj.id, obj.type, obj.x, obj.y);
-        element.name = obj.name;
-        if (obj.color) element.color = obj.color;
-        if (obj.stroke) element.stroke = obj.stroke;
-        return element;
+        // Don't use 'this' for static method - need to instantiate the actual subclass
+        throw new Error('fromObject must be implemented by subclass');
     }
 }

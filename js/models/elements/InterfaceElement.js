@@ -26,4 +26,12 @@ export class InterfaceElement extends Element {
     getFacePosition() {
         return 'translate(72, -5)';
     }
+
+    static fromObject(obj) {
+        const element = new InterfaceElement(obj.id, obj.x, obj.y);
+        element.name = obj.name || '';
+        if (obj.color) element.color = obj.color;
+        if (obj.stroke) element.stroke = obj.stroke;
+        return element;
+    }
 }
