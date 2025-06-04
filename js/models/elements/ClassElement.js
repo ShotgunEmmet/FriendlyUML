@@ -17,9 +17,7 @@ export class ClassElement extends Element {
 
     static fromObject(obj) {
         const element = new ClassElement(obj.id, obj.x, obj.y);
-        element.name = obj.name || '';
-        if (obj.color) element.color = obj.color;
-        if (obj.stroke) element.stroke = obj.stroke;
+        element.setFromObject(obj);
         return element;
     }
 }

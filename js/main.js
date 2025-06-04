@@ -15,10 +15,11 @@ class UMLDiagramApp {
     constructor() {
         // Initialize managers
         this.stateManager = new StateManager();
+        this.elementFactory = new ElementFactory();
+        this.stateManager.elementFactory = this.elementFactory; // Set reference
         this.canvasManager = new CanvasManager('canvas', this.stateManager);
         this.eventManager = new EventManager(this.stateManager, this.canvasManager);
         this.animationManager = new AnimationManager();
-        this.elementFactory = new ElementFactory();
 
         // Initialize UI components
         this.initializeComponents();
@@ -32,6 +33,12 @@ class UMLDiagramApp {
     }
 
     initializeComponents() {
+        // Set up animation manager to access elements
+        this.animationManager.getElement = (id) => {
+            const element = this.stateManager.getElementById(id);
+            return element ? { id, isDragging: element.isDragging, isSad: element.isSad } : null;
+        };
+
         // Toolbar
         this.toolbar = new Toolbar('toolbar', this.elementFactory);
         this.toolbar.onAddElement = (type) => {
@@ -100,10 +107,16 @@ class UMLDiagramApp {
             );
         });
         this.stateManager.subscribe('elementAdded', () => this.render());
-        this.stateManager.subscribe('elementDeleted', () => this.render());
+        this.stateManager.subscribe('elementDeleted', (id) => {
+            this.animationManager.stopFaceAnimations(id);
+            this.render();
+        });
         this.stateManager.subscribe('elementUpdated', () => this.render());
         this.stateManager.subscribe('connectionAdded', () => this.render());
         this.stateManager.subscribe('connectionDeleted', () => this.render());
+        this.stateManager.subscribe('connectModeChanged', (isConnecting) => {
+            this.toolbar.updateConnectButton(isConnecting);
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -143,10 +156,15 @@ class UMLDiagramApp {
     }
 
     render() {
-        // Convert element objects to proper class instances
+        // Ensure all elements are proper instances (not just plain objects)
         const elements = this.stateManager.elements.map(el => {
-            const ElementClass = this.elementFactory.getElementClass(el.type);
-            return ElementClass.fromObject(el);
+            if (typeof el.createShape === 'function') {
+                // Already a proper Element instance
+                return el;
+            } else {
+                // Convert plain object to Element instance
+                return this.elementFactory.createFromObject(el);
+            }
         });
         
         this.canvasManager.render(
@@ -162,7 +180,7 @@ class UMLDiagramApp {
         const filename = prompt('Enter filename for your UML diagram:', 'uml-diagram');
         if (!filename) return;
         
-        const xmlSerializer = new UMLXMLSerializer();
+        const xmlSerializer = new UMLXMLSerializer(this.elementFactory);
         const xmlString = xmlSerializer.serialize(this.stateManager);
         const blob = new Blob([xmlString], { type: 'text/xml' });
         const url = URL.createObjectURL(blob);
@@ -180,7 +198,10 @@ class UMLDiagramApp {
         
         const reader = new FileReader();
         reader.onload = (e) => {
-            const xmlSerializer = new UMLXMLSerializer();
+            // Clear existing animations before loading new diagram
+            this.animationManager.stopAllAnimations();
+            
+            const xmlSerializer = new UMLXMLSerializer(this.elementFactory);
             xmlSerializer.deserialize(e.target.result, this.stateManager);
             this.stateManager.saveState();
             this.render();

@@ -42,7 +42,11 @@ export class EventManager {
     handleElementMouseDown(e, element) {
         if (this.stateManager.isPresentationMode || this.stateManager.isConnecting) return;
         
-        this.draggedElement = element;
+        // Get the actual element from state manager to ensure we have the correct instance
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        
+        this.draggedElement = actualElement;
         const canvasWrapper = document.getElementById('canvasWrapper');
         const scale = this.stateManager.zoomLevel / 100;
         
@@ -54,12 +58,12 @@ export class EventManager {
         const canvasY = scrolledY / scale;
         
         this.dragOffset = {
-            x: canvasX - element.x,
-            y: canvasY - element.y
+            x: canvasX - actualElement.x,
+            y: canvasY - actualElement.y
         };
         
-        element.isDragging = true;
-        this.stateManager.notifyObservers('elementDragStart', element);
+        actualElement.isDragging = true;
+        this.stateManager.notifyObservers('elementDragStart', actualElement);
     }
 
     handleMouseMove(e) {
@@ -80,12 +84,12 @@ export class EventManager {
             this.draggedElement.y = (scrolledY / scale) - this.dragOffset.y;
             
             // Move child elements if dragging a package
-            if (this.draggedElement.type === 'package') {
+            if (this.draggedElement.type === 'package' && typeof this.draggedElement.isInside === 'function') {
                 const deltaX = this.draggedElement.x - oldX;
                 const deltaY = this.draggedElement.y - oldY;
                 
                 this.stateManager.elements.forEach(element => {
-                    if (this.draggedElement.isInside && this.draggedElement.isInside(element)) {
+                    if (this.draggedElement.isInside(element)) {
                         element.x += deltaX;
                         element.y += deltaY;
                     }
@@ -93,12 +97,7 @@ export class EventManager {
             }
             
             this.stateManager.notifyObservers('elementDragging', this.draggedElement);
-            this.canvasManager.render(
-                this.stateManager.elements,
-                this.stateManager.connections,
-                this.stateManager.showFaces,
-                this.stateManager.isPresentationMode
-            );
+            this.stateManager.notifyObservers('stateChange'); // Trigger re-render
         } else if (this.isResizing && this.resizingElement) {
             const scale = this.stateManager.zoomLevel / 100;
             const newWidth = this.resizeStart.width + (e.clientX - this.resizeStart.x) / scale;
@@ -107,12 +106,7 @@ export class EventManager {
             this.resizingElement.width = Math.max(100, newWidth);
             this.resizingElement.height = Math.max(80, newHeight);
             
-            this.canvasManager.render(
-                this.stateManager.elements,
-                this.stateManager.connections,
-                this.stateManager.showFaces,
-                this.stateManager.isPresentationMode
-            );
+            this.stateManager.notifyObservers('stateChange'); // Trigger re-render
         }
     }
 
@@ -139,51 +133,54 @@ export class EventManager {
     }
 
     handleResizeStart(e, element) {
+        // Get the actual element from state manager
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        
         this.isResizing = true;
-        this.resizingElement = element;
+        this.resizingElement = actualElement;
         this.resizeStart = {
-            width: element.width || 200,
-            height: element.height || 150,
+            width: actualElement.width || 200,
+            height: actualElement.height || 150,
             x: e.clientX,
             y: e.clientY
         };
     }
 
     showNameEditor(e, element) {
-        const g = document.getElementById(`element-${element.id}`);
+        // Get the actual element from state manager
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        
+        const g = document.getElementById(`element-${actualElement.id}`);
         const nameGroup = g.querySelector('.name-group');
         const svgHelper = this.canvasManager.svgHelper;
         
-        const namePos = element.getNamePosition(element.name.split('\n'));
-        const width = element.type === 'package' ? (element.width || 200) - 20 : 130;
+        const namePos = actualElement.getNamePosition(actualElement.name.split('\n'));
+        const width = actualElement.type === 'package' ? (actualElement.width || 200) - 20 : 130;
         
         const foreign = svgHelper.createForeignObject(10, namePos.y - 10, width, 50);
         
         const textarea = document.createElement('textarea');
         textarea.className = 'text-area';
-        textarea.value = element.name;
-        const originalName = element.name;
+        textarea.value = actualElement.name;
+        const originalName = actualElement.name;
         
         textarea.addEventListener('blur', () => {
-            element.name = textarea.value;
+            actualElement.name = textarea.value;
             foreign.remove();
             nameGroup.style.display = 'block';
-            if (originalName !== element.name) {
+            if (originalName !== actualElement.name) {
                 this.stateManager.saveState();
             }
-            this.canvasManager.render(
-                this.stateManager.elements,
-                this.stateManager.connections,
-                this.stateManager.showFaces,
-                this.stateManager.isPresentationMode
-            );
+            this.stateManager.notifyObservers('stateChange');
         });
         
         textarea.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                element.name += '\n';
-                textarea.value = element.name;
+                actualElement.name += '\n';
+                textarea.value = actualElement.name;
             }
         });
         
@@ -196,7 +193,11 @@ export class EventManager {
     }
 
     showColorPicker(e, element) {
-        const g = document.getElementById(`element-${element.id}`);
+        // Get the actual element from state manager
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        
+        const g = document.getElementById(`element-${actualElement.id}`);
         const svgHelper = this.canvasManager.svgHelper;
         
         const foreign = svgHelper.createForeignObject(10, 10, 100, 200);
@@ -216,15 +217,10 @@ export class EventManager {
             colorDiv.className = 'color-option';
             colorDiv.style.backgroundColor = color;
             colorDiv.addEventListener('click', () => {
-                element.color = color;
+                actualElement.color = color;
                 foreign.remove();
                 this.stateManager.saveState();
-                this.canvasManager.render(
-                    this.stateManager.elements,
-                    this.stateManager.connections,
-                    this.stateManager.showFaces,
-                    this.stateManager.isPresentationMode
-                );
+                this.stateManager.notifyObservers('stateChange');
             });
             grid.appendChild(colorDiv);
         });
@@ -245,7 +241,11 @@ export class EventManager {
     }
 
     showLabelEditor(e, connection) {
-        const g = document.getElementById(`connection-${connection.id}`);
+        // Get the actual connection from state manager
+        const actualConnection = this.stateManager.getConnection(connection.id);
+        if (!actualConnection) return;
+        
+        const g = document.getElementById(`connection-${actualConnection.id}`);
         const label = g.querySelector('.connection-label');
         const rect = label.getBoundingClientRect();
         const canvasRect = this.canvasManager.canvas.getBoundingClientRect();
@@ -260,21 +260,16 @@ export class EventManager {
         
         const input = document.createElement('input');
         input.className = 'text-input';
-        input.value = connection.label || '';
-        const originalLabel = connection.label;
+        input.value = actualConnection.label || '';
+        const originalLabel = actualConnection.label;
         
         input.addEventListener('blur', () => {
-            connection.label = input.value;
+            actualConnection.label = input.value;
             foreign.remove();
-            if (originalLabel !== connection.label) {
+            if (originalLabel !== actualConnection.label) {
                 this.stateManager.saveState();
             }
-            this.canvasManager.render(
-                this.stateManager.elements,
-                this.stateManager.connections,
-                this.stateManager.showFaces,
-                this.stateManager.isPresentationMode
-            );
+            this.stateManager.notifyObservers('stateChange');
         });
         
         input.addEventListener('keydown', (e) => {

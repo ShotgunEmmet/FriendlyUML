@@ -140,13 +140,19 @@ export class CanvasManager {
     }
 
     handleElementMouseDown(e, element) {
-        // Handled by EventManager
-        this.stateManager.notifyObservers('elementMouseDown', { event: e, element });
+        // Get the actual element from state manager
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        
+        // Notify event manager with the actual element
+        this.stateManager.notifyObservers('elementMouseDown', { event: e, element: actualElement });
     }
 
     handleNameClick(e, element) {
         e.stopPropagation();
-        this.stateManager.notifyObservers('elementNameClick', { event: e, element });
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        this.stateManager.notifyObservers('elementNameClick', { event: e, element: actualElement });
     }
 
     handleDeleteClick(e, element) {
@@ -156,17 +162,23 @@ export class CanvasManager {
 
     handleColorClick(e, element) {
         e.stopPropagation();
-        this.stateManager.notifyObservers('elementColorClick', { event: e, element });
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        this.stateManager.notifyObservers('elementColorClick', { event: e, element: actualElement });
     }
 
     handleResizeMouseDown(e, element) {
         e.stopPropagation();
-        this.stateManager.notifyObservers('elementResizeStart', { event: e, element });
+        const actualElement = this.stateManager.getElementById(element.id);
+        if (!actualElement) return;
+        this.stateManager.notifyObservers('elementResizeStart', { event: e, element: actualElement });
     }
 
     handleConnectionLabelClick(e, connection) {
         e.stopPropagation();
-        this.stateManager.notifyObservers('connectionLabelClick', { event: e, connection });
+        const actualConnection = this.stateManager.getConnection(connection.id);
+        if (!actualConnection) return;
+        this.stateManager.notifyObservers('connectionLabelClick', { event: e, connection: actualConnection });
     }
 
     setZoom(zoomLevel) {

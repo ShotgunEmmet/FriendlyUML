@@ -12,13 +12,33 @@ export class StateManager {
         this.isPresentationMode = false;
         this.showFaces = true;
         this.zoomLevel = 100;
+        this.elementFactory = null; // Will be set by main app
     }
 
     // State management
     saveState() {
+        // Convert elements to plain objects for storage
+        const elementsData = this.elements.map(el => {
+            if (typeof el.toObject === 'function') {
+                return el.toObject();
+            }
+            // If it's already a plain object
+            return {
+                id: el.id,
+                type: el.type,
+                name: el.name,
+                x: el.x,
+                y: el.y,
+                width: el.width,
+                height: el.height,
+                color: el.color,
+                stroke: el.stroke
+            };
+        });
+
         this.history.splice(this.historyIndex + 1);
         this.history.push({
-            elements: JSON.parse(JSON.stringify(this.elements)),
+            elements: JSON.parse(JSON.stringify(elementsData)),
             connections: JSON.parse(JSON.stringify(this.connections)),
             nextId: this.nextId
         });
@@ -51,7 +71,14 @@ export class StateManager {
     }
 
     restoreState(state) {
-        this.elements = JSON.parse(JSON.stringify(state.elements));
+        // Convert plain objects back to Element instances
+        if (this.elementFactory) {
+            this.elements = state.elements.map(el => 
+                this.elementFactory.createFromObject(el)
+            );
+        } else {
+            this.elements = JSON.parse(JSON.stringify(state.elements));
+        }
         this.connections = JSON.parse(JSON.stringify(state.connections));
         this.nextId = state.nextId;
     }
@@ -78,6 +105,15 @@ export class StateManager {
             Object.assign(element, updates);
             this.notifyObservers('elementUpdated', element);
         }
+    }
+
+    // Set elements directly (used when loading from XML)
+    setElements(elements) {
+        this.elements = elements;
+    }
+
+    setConnections(connections) {
+        this.connections = connections;
     }
 
     // Connection management

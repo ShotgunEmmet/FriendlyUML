@@ -79,9 +79,12 @@ export class Element {
         return obj;
     }
 
-    // Create from object
-    static fromObject(obj) {
-        // Don't use 'this' for static method - need to instantiate the actual subclass
-        throw new Error('fromObject must be implemented by subclass');
+    // Set properties from object
+    setFromObject(obj) {
+        this.name = obj.name || '';
+        this.isDragging = obj.isDragging || false;
+        this.isSad = obj.isSad || false;
+        if (obj.color) this.color = obj.color;
+        if (obj.stroke) this.stroke = obj.stroke;
     }
 }
